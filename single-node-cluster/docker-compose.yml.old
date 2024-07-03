@@ -1,0 +1,53 @@
+services:
+  elastic:
+    volumes:
+      - type: bind
+        source: ./../data/certs
+        target: /usr/share/elasticsearch/config/certs
+      - type: bind
+        source: ./../data/elastic
+        target: /usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+#    mem_limit: 1073741824
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+    build: elastic
+    healthcheck:
+      test : ["CMD-SHELL", "[ -f /usr/share/elasticsearch/config/certs/elastic/elastic.crt ]"]
+#      test : ["CMD-SHELL", "[ -f /usr/share/elasticsearch/config/certs/elastic/elastic.crt ] && curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"]
+      interval: 5s
+      timeout: 5s
+      retries: 120
+
+  kibana:
+    depends_on:
+      elastic:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: ./../data/certs
+        target: /usr/share/kibana/config/certs
+      - type: bind
+        source: ./../data/kibana
+        target: /usr/share/kibana/data
+    ports:
+      - 5601:5601
+    build: ./kibana
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      interval: 5s
+      timeout: 5s
+      retries: 120
+#    mem_limit: 1073741824
+
+volumes:
+  certs:
+    driver: local
+  elastic:
+    driver: local
+  kibana:
+    driver: local
