@@ -1,23 +1,12 @@
 services:
-  setup:
-    build: elastic
+  elastic:
     volumes:
-      - certs:/usr/share/elasticsearch/config/certs
-    user: "0"
-    healthcheck:
-      test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
-      interval: 1s
-      timeout: 5s
-      retries: 120
-
-  es01:
-    build: ./node01
-    depends_on:
-      setup:
-        condition: service_healthy
-    volumes:
-      - certs:/usr/share/elasticsearch/config/certs
-      - esdata01:/usr/share/elasticsearch/data
+      - type: bind
+        source: /home/acrespy/42/42Cursus/42Projets/elk-stack/data/certs
+        target: /usr/share/elasticsearch/config/certs
+      - type: bind
+        source: /home/acrespy/42/42Cursus/42Projets/elk-stack/data/elastic
+        target: /usr/share/elasticsearch/data
     ports:
       - 9200:9200
 #    mem_limit: 1073741824
@@ -25,41 +14,40 @@ services:
 #      memlock:
 #        soft: -1
 #        hard: -1
+    build: elastic
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
-        ]
-      interval: 10s
-      timeout: 10s
+      test: [ "CMD-SHELL", "[ -f /usr/share/elasticsearch/config/certs/elastic/elastic.crt ]" ]
+      interval: 1s
+      timeout: 5s
       retries: 120
 
   kibana:
-    build: ./kibana
     depends_on:
-      es01:
+      elastic:
         condition: service_healthy
     volumes:
-      - certs:/usr/share/kibana/config/certs
-      - kibanadata:/usr/share/kibana/data
+      - type: bind
+        source: /home/acrespy/42/42Cursus/42Projets/elk-stack/data/certs
+        target: /usr/share/kibana/config/certs
+      - type: bind
+        source: /home/acrespy/42/42Cursus/42Projets/elk-stack/data/kibana
+        target: /usr/share/kibana/data
     ports:
       - 5601:5601
-#    mem_limit: 1073741824
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
-        ]
+        [ "CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'" ]
       interval: 10s
       timeout: 10s
       retries: 120
+    build: ./kibana
+
+#    mem_limit: 1073741824
 
 volumes:
   certs:
     driver: local
-  esdata01:
+  elastic:
     driver: local
-  kibanadata:
+  kibana:
     driver: local

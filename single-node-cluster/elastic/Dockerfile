@@ -1,8 +1,25 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:8.14.1
+FROM elasticsearch:8.14.1
+
+ENV ELASTIC_PASSWORD=elasticpass
+ENV ES_JAVA_OPTS="-Xms750m -Xmx750m"
+
+ENV node.name=elastic
+ENV cluster.name=transcendance-cluster
+ENV discovery.type=single-node
+ENV bootstrap.memory_lock=false
+ENV xpack.security.enabled=true
+ENV xpack.security.http.ssl.enabled=true
+ENV xpack.security.http.ssl.key=certs/elastic/elastic.key
+ENV xpack.security.http.ssl.certificate=certs/elastic/elastic.crt
+ENV xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+ENV xpack.security.transport.ssl.enabled=true
+ENV xpack.security.transport.ssl.key=certs/elastic/elastic.key
+ENV xpack.security.transport.ssl.certificate=certs/elastic/elastic.crt
+ENV xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
+ENV xpack.security.transport.ssl.verification_mode=certificate
+ENV xpack.license.self_generated.type=basic
 
 USER root
-
-COPY elk.sh /tmp/entry.sh
-RUN chmod +x /tmp/entry.sh
-
-ENTRYPOINT ["/tmp/entry.sh"]
+COPY ./tools/setup.sh /usr/share/elasticsearch/setup.sh
+RUN chmod +x /usr/share/elasticsearch/setup.sh
+ENTRYPOINT ["/usr/share/elasticsearch/setup.sh"]

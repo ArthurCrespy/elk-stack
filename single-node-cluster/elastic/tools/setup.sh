@@ -1,17 +1,15 @@
 #!/bin/bash
 if [ ! -f config/certs/ca.zip ]; then
-    echo "Creating CA"
     bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip
     unzip config/certs/ca.zip -d config/certs
 fi
 
 if [ ! -f config/certs/certs.zip ]; then
-    echo "Creating certs"
     cat <<EOF > config/certs/instances.yml
 instances:
-  - name: es01
+  - name: elastic
     dns:
-      - es01
+      - node
       - localhost
     ip:
       - 127.0.0.1
@@ -20,19 +18,14 @@ EOF
     unzip config/certs/certs.zip -d config/certs
 fi
 
-echo "Setting file permissions"
 chown -R root:root config/certs
 find . -type d -exec chmod 750 {} \;
 find . -type f -exec chmod 640 {} \;
 
-echo "Waiting for Elasticsearch availability"
-until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do
+until curl -s --cacert config/certs/ca/ca.crt https://elastic:9200 | grep -q "missing authentication credentials"; do
     sleep 30
 done
 
-echo "Setting kibana_system password"
-until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:elasticpass" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"kibanapass\"}" | grep -q "^{}"; do
+until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:elasticpass" -H "Content-Type: application/json" https://elastic:9200/_security/user/kibana_system/_password -d "{\"password\":\"kibanapass\"}" | grep -q "^{}"; do
     sleep 10
 done
-
-echo "All done!"
