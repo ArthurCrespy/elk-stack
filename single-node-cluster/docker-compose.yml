@@ -16,8 +16,9 @@ services:
 #        hard: -1
     build: elastic
     healthcheck:
-      test: [ "CMD-SHELL", "[ -f /usr/share/elasticsearch/config/certs/elastic/elastic.crt ]" ]
-      interval: 1s
+      test : ["CMD-SHELL", "[ -f /usr/share/elasticsearch/config/certs/elastic/elastic.crt ]"]
+#      test : ["CMD-SHELL", "[ -f /usr/share/elasticsearch/config/certs/elastic/elastic.crt ] && curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"]
+      interval: 5s
       timeout: 5s
       retries: 120
 
@@ -34,14 +35,13 @@ services:
         target: /usr/share/kibana/data
     ports:
       - 5601:5601
+    build: ./kibana
     healthcheck:
       test:
-        [ "CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'" ]
-      interval: 10s
-      timeout: 10s
+        ["CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      interval: 5s
+      timeout: 5s
       retries: 120
-    build: ./kibana
-
 #    mem_limit: 1073741824
 
 volumes:
